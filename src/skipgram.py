@@ -109,6 +109,8 @@ class NegativeSamplingLoss(nn.Module):
         """Initializes the NegativeSamplingLoss module."""
         super().__init__()
 
+        self.log_sigmoid: nn.LogSigmoid = nn.LogSigmoid()
+
     def forward(self, input_vectors: torch.Tensor, output_vectors: torch.Tensor,
                 noise_vectors: torch.Tensor) -> torch.Tensor:
         """Computes the Negative Sampling loss.
@@ -124,15 +126,17 @@ class NegativeSamplingLoss(nn.Module):
         Returns:
             A tensor containing the average loss for the batch.
         """
-
         # Compute log-sigmoid loss for correct classifications
         # TODO
-        out_loss = None
+        out_dot_product = (input_vectors * output_vectors).sum(dim=1)
+        out_loss = self.log_sigmoid(out_dot_product)
 
         # Compute log-sigmoid loss for incorrect classifications
         # TODO
-        noise_loss = None
+        noise_dot_product = torch.bmm(-noise_vectors, input_vectors.view(input_vectors.shape[0], -1, 1))
+        noise_loss = self.log_sigmoid(noise_dot_product).sum(dim=1)
 
         # Return the negative sum of the correct and noisy log-sigmoid losses, averaged over the batch
         # TODO
-        return None
+        avg_loss: torch.Tensor = -(out_loss + noise_loss).mean()
+        return avg_loss
