@@ -83,7 +83,7 @@ class SkipGramNeg(nn.Module):
 
         # Sample words from our noise distribution
         # TODO
-        noise_words: torch.Tensor = torch.multinomial(noise_dist, batch_size * n_samples)
+        noise_words: torch.Tensor = torch.multinomial(noise_dist, batch_size * n_samples, replacement=True)
 
         device: str = "cuda" if self.out_embed.weight.is_cuda else "cpu"
         noise_words: torch.Tensor = noise_words.to(device)
@@ -109,8 +109,6 @@ class NegativeSamplingLoss(nn.Module):
         """Initializes the NegativeSamplingLoss module."""
         super().__init__()
 
-        self.log_sigmoid: nn.LogSigmoid = nn.LogSigmoid()
-
     def forward(self, input_vectors: torch.Tensor, output_vectors: torch.Tensor,
                 noise_vectors: torch.Tensor) -> torch.Tensor:
         """Computes the Negative Sampling loss.
@@ -128,13 +126,17 @@ class NegativeSamplingLoss(nn.Module):
         """
         # Compute log-sigmoid loss for correct classifications
         # TODO
-        out_dot_product = (input_vectors * output_vectors).sum(dim=1)
-        out_loss = self.log_sigmoid(out_dot_product)
+        """out_dot_product = (input_vectors * output_vectors).sum(dim=1)
+        out_loss = self.log_sigmoid(out_dot_product)"""
+        out_dot_product = torch.bmm(input_vectors.unsqueeze(1), output_vectors.unsqueeze(2)).squeeze()
+        out_loss = torch.nn.functional.logsigmoid(out_dot_product)
 
         # Compute log-sigmoid loss for incorrect classifications
         # TODO
-        noise_dot_product = torch.bmm(-noise_vectors, input_vectors.view(input_vectors.shape[0], -1, 1))
-        noise_loss = self.log_sigmoid(noise_dot_product).sum(dim=1)
+        """noise_dot_product = torch.bmm(-noise_vectors, input_vectors.view(input_vectors.shape[0], -1, 1))
+        noise_loss = self.log_sigmoid(noise_dot_product).sum(dim=1)"""
+        noise_dot_product = torch.bmm(noise_vectors, input_vectors.unsqueeze(2)).squeeze(2)
+        noise_loss = torch.nn.functional.logsigmoid(-noise_dot_product).sum(dim=1)
 
         # Return the negative sum of the correct and noisy log-sigmoid losses, averaged over the batch
         # TODO

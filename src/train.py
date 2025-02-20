@@ -49,7 +49,7 @@ def train_skipgram(model: SkipGramNeg,
             # TODO
             input_vectors = model.forward_input(inputs)
             output_vectors = model.forward_output(targets)
-            noise_vectors = model.forward_noise(batch_size, n_samples=16)
+            noise_vectors = model.forward_noise(inputs.shape[0], n_samples=5)
             
             # negative sampling loss
             # TODO
@@ -65,7 +65,7 @@ def train_skipgram(model: SkipGramNeg,
                 print(f"Epoch: {epoch+1}/{epochs}, Step: {steps}, Loss: {loss.item()}")
                 # Cosine similarity
                 # TODO
-                valid_examples, valid_similarities = cosine_similarity(embedding=model.in_embed, device=device)
+                valid_examples, valid_similarities = cosine_similarity(embedding=model.out_embed, device=device)
                 _, closest_idxs = valid_similarities.topk(6)
 
                 valid_examples, closest_idxs = valid_examples.to('cpu'), closest_idxs.to('cpu')

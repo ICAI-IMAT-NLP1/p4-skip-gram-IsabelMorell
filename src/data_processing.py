@@ -78,7 +78,7 @@ def subsample_words(words: List[str], vocab_to_int: Dict[str, int], threshold: f
     word_counts: Counter = Counter(int_words)
     
     freqs: Dict[int, float] = {word: count/len(int_words) for word, count in word_counts.items()}
-    probabilities: Dict[int, float] = {word: (1 - np.sqrt(1e-5/freq)) for word, freq in freqs.items()}
+    probabilities: Dict[int, float] = {word: (1 - np.sqrt(threshold/freq)) for word, freq in freqs.items()}
 
     train_words: List[str] = [word for word, prob in probabilities.items() if prob > threshold]
 
@@ -103,11 +103,14 @@ def get_target(words: List[str], idx: int, window_size: int = 5) -> List[str]:
     if first_idx < 0:
         first_idx = 0
 
-    last_index = idx + current_window_size
+    last_index = idx + current_window_size + 1
     if last_index >= len(words):
-        last_index = len(words) - 1
+        last_index = len(words)
 
-    target_words: List[str] = words[first_idx:idx] + words[idx+1:last_index+1]
+    target_words: List[str] = []
+    for i in range(first_idx, last_index):
+        if i != idx:
+            target_words.append(words[i])
 
     return target_words
 
@@ -132,18 +135,15 @@ def get_batches(words: List[int], batch_size: int, window_size: int = 5) -> Gene
 
     # TODO
     for idx in range(0, len(words), batch_size):
-        current_window_size = random.randint(1, window_size)
+        inputs: List[int] = []
+        targets: List[int] = []
 
-        first_idx = idx - current_window_size
-        if first_idx < 0:
-            first_idx = 0
-
-        last_index = idx + current_window_size
-        if last_index >= len(words):
-            last_index = len(words) - 1
-
-        targets: List[int] = words[first_idx:idx] + words[idx+1:last_index+1]
-        inputs: List[int] = [words[idx]]*len(targets)
+        batch_words = words[idx: idx+batch_size]
+        for i, word in enumerate(batch_words):
+            target_words = get_target(words, idx+i, window_size)
+            for target in target_words:
+                inputs.append(word)
+                targets.append(target)
         yield (inputs, targets)
 
 def cosine_similarity(embedding: torch.nn.Embedding, valid_size: int = 16, valid_window: int = 100, device: str = 'cpu'):
