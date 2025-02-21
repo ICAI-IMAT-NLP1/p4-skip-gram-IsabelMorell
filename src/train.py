@@ -32,8 +32,7 @@ def train_skipgram(model: SkipGramNeg,
         device: The device (CPU or GPU) where the tensors will be allocated.
     """
     # Define loss and optimizer
-    # TODO
-    criterion = NegativeSamplingLoss()
+    criterion: NegativeSamplingLoss = NegativeSamplingLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     steps = 0
@@ -46,17 +45,14 @@ def train_skipgram(model: SkipGramNeg,
             inputs, targets = inputs.to(device), targets.to(device)
 
             # input, output, and noise vectors
-            # TODO
-            input_vectors = model.forward_input(inputs)
-            output_vectors = model.forward_output(targets)
-            noise_vectors = model.forward_noise(inputs.shape[0], n_samples=5)
+            input_vectors: torch.Tensor = model.forward_input(inputs)
+            output_vectors: torch.Tensor = model.forward_output(targets)
+            noise_vectors: torch.Tensor = model.forward_noise(inputs.shape[0], n_samples=5)
             
             # negative sampling loss
-            # TODO
             loss = criterion(input_vectors, output_vectors, noise_vectors)
 
             # Backward step
-            # TODO
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -64,7 +60,6 @@ def train_skipgram(model: SkipGramNeg,
             if steps % print_every == 0:
                 print(f"Epoch: {epoch+1}/{epochs}, Step: {steps}, Loss: {loss.item()}")
                 # Cosine similarity
-                # TODO
                 valid_examples, valid_similarities = cosine_similarity(embedding=model.out_embed, device=device)
                 _, closest_idxs = valid_similarities.topk(6)
 
